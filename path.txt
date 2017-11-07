@@ -1,0 +1,11 @@
+#mizu
+/home/utsumi/mnt/wellshare/data/GPMDB/GMI_dbase_PC_prof2_V5
+/home/utsumi/mnt/wellshare/data/GPMDB/GMI_dbase_PC_prof2_V5/20150830_204112_GPM_008545.strm
+
+/data4/utsumi/JPLDB/GMI_dbase_PC_prof2_V5_NPC4_BIN10_OVERLAP1/
+/data4/utsumi/JPLDB/GMI_dbase_PC_prof2_V5_NPC4_BIN10_OVERLAP1/db_06992.bin
+
+
+#well
+/media/disk2/share/data/GPMDB/GMI_dbase_PC_prof2_V5/
+/media/disk2/share/data/GPMDB/GMI_dbase_PC_prof2_V5/20150830_204112_GPM_008545.strm

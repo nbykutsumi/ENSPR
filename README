@@ -1,0 +1,5 @@
+# -How to compile
+gcc -fpack-struct FILE.c -lm -o OUTNAME
+# "-lm" option is requred for math.h
+# "-lm" should be placed after source file
+
