@@ -1,7 +1,12 @@
-program read_DB
+MODULE f_read_db
+
+CONTAINS
+!--------------------------------------------------
+SUBROUTINE read_db(idbname, nrec, b_all, u, ave_emis, std_emis, a2pc, a1precip_NS)
+!SUBROUTINE read_db(idbname, nrec, a2pc, a1precip_NS)
 implicit none
 
-
+!-- parameters ---------
 integer,parameter :: NLEV_NS = 88  ! DPR 250-m bins
 integer,parameter :: NLEV = 42  ! from MERRA2  42 levels
 integer,parameter :: NCHAN =13  ! GMI TB
@@ -11,6 +16,111 @@ integer,parameter :: NREG = 57
 integer,parameter :: NEM_USE = 4
 integer,parameter :: NPCHIST = 10
 integer,parameter :: BYTE = 1334  ! UTSUMI
+
+
+!-- input --------------
+character(len=512)  idbname
+!f2py intent(in)    idbname
+
+integer             nrec
+!f2py intent(in)    nrec
+
+real,dimension(NEM,NREG+1)  b_all   ! regression coeffs for all NTBREG
+!f2py intent(in)            b_all
+
+real,dimension(NEM,NEM)     u
+!f2py intent(in)            u
+
+real,dimension(NEM)         ave_emis, std_emis
+!f2py intent(in)            ave_emis, std_emis
+
+!-- out -----------------
+real,dimension(NEM,nrec) :: a2pc
+!f2py intent(out)          a2pc
+
+real,dimension(nrec)    :: a1precip_NS
+!f2py intent(out)          a1precip_NS
+!------------------------
+!sfc_class value:
+!1= ocean
+!2= sea ice
+!3-7 = decreasing vegetation
+!8-11 = decreasing snow cover
+!12 = inland water
+!13 = coast
+!14 = ocean/sea-ice boundary
+!
+!NS refers to the retrievals done across the full Ku-band radar swath (49 beam positions), no consideration of Ka-band
+!MS refers to the retrievals done within NS beam positions 12-36, where both Ku and Ka band radars are available
+!HS refers to the retrievals done with the Ka-band High Sensivity radar (interleaved with Ka-band)
+!
+!
+!DESCRIPTION OF EACH RECORD
+!
+!satid= identifier for the satellite with the radiometer  0=GPM 16-F16 17=F17 18=F18 19=F19 100=ATMS
+!rev= orbit revolution number for the satellite with the radar (always GPM)
+!rev2= orbit rev number for satellite with the radiometer (obviously rev2=rev for GMI, but rev2 != rev for SSMIS and ATMS)
+!SC_orientation= GPM spacecraft orientation, 0 or 180 degrees
+!i_S1,j_S1= scan and pixel number from radiometer.  For GMI, i_S1 ranges from 0-3000 or so. j_S1 ranges from 0-220.
+!i_NS,j_NS= scan and pixel number from radar.  For DPR, i_NS ranges from 0-9500 or so. j_NS ranges from 0-48.
+!sfc_class= TELSEM surface class index, listed above
+!yyyy,mm,dd,hh,mn,ss= date
+!timediff = time offset between radar and radiometer, in seconds
+!slat, slon= spacecraft coordinates of the satellite with the radar, here GPM
+!glat1, glon1= GMI coordinates
+!slat2, slon2= spacecraft coordinates of the satellite with the radiometer (slat=slat2 and slon=slon2 for GMI)
+!tb= GMI TB, from 1B.GPM.GMI, in Kelvin
+!pc_emis= emissivity principal components (empty, computed below), length 11 array
+!emis = emissivity that is reconstructed from pc_emis (empty, computed below), length 11 array
+!sfc_min, sfc_max= land surface type min and max values encountered from the DPR 3x3 profiles
+!elev = elevation in meters
+!
+!nku10, nka10, nka10_HS= Number of bins where Z > 10 dBZ within 3x3 DPR profile, for Ku, Ka and Ka-HighSens radars
+!nku15, nka15, nka15_HS= Number of bins where Z > 15 dBZ within 3x3 DPR profile, for Ku, Ka and Ka-HighSens radars
+!nku20, nka20, nka20_HS= Number of bins where Z > 20 dBZ within 3x3 DPR profile, for Ku, Ka and Ka-HighSens radars
+!nku25, nka25, nka25_HS= Number of bins where Z > 25 dBZ within 3x3 DPR profile, for Ku, Ka and Ka-HighSens radars
+!zen_NS= DPR zenith angle, from 2A.GPM.DPR, in degrees
+!pia_NS, pia_MS= path integrated attenuation in dB for DPR Ku-band only (NS) and Ku+Ka (MS) retrievals
+!pia_NS_cmb= path integrated attenuation in dB for Ku-band only (NS) combined (DPR+GMI) retrievals
+!pia_MS_cmb[2]= path integrated attenuation in dB for Ku+Ka band (MS) combined (DPR+GMI) retrievals
+!
+!precip_NS= Estimated surface precip rate from DPR-only NS retrieval, precipRateESurface in 2A.GPM.DPR
+!precip_NS_max= max rain rate encountered within the 3x3 profiles
+!
+!precip2_NS= Near surface precip rate from DPR-only NS retrieval, precipRateNearSurface in 2A.GPM.DPR
+!precip2_NS_max= max precip rate encountered within the 3x3 profiles
+!
+!precip_MS= Estimated surface precip rate from DPR-only MS retrieval, precipRateESurface in 2A.GPM.DPR
+!precip_MS_max= max rain rate encountered within the 3x3 profiles
+!
+!precip2_MS= Near surface precip rate from DPR-only MS retrieval, precipRateNearSurface in 2A.GPM.DPR
+!precip2_MS_max= max precip rate encountered within the 3x3 profiles
+!
+!precip_NS_cmb= Surface precip rate from DPR+GMI combined NS retrieval, surfPrecipTotRate in 2B.GPM.DPRGMI.CORRA
+!precip_NS_cmb_max= max precip rate encountered within the 3x3 profiles
+!
+!precip_MS_cmb= Surface precip rate from DPR+GMI combined MS retrieval, surfPrecipTotRate in 2B.GPM.DPRGMI.CORRA
+!precip_MS_cmb_max= max precip rate encountered within the 3x3 profiles
+!
+!precip_GPROF=  GPROF precip, surfacePrecipitation, copied over from 2A.GPM.GMI.GPROF
+!frozen_precip_GPROF= same as above but frozenPrecipitation, copied over from 2A.GPM.GMI.GPROF
+!prob_precip_GPROF= probability of precipitation, probabilityOfPrecip copied over from 2A.GPM.GMI.GPROF
+!
+!ts, t2m= surface temperature (Kelvin), 2-m air temp (Kelvin), interpolated from MERRA2 1-hour reanalysis
+!tqv= total precip column water (mm), interpolated from MERRA2 3-hourly reanalysis
+!hs,ps= surface geopotential height (meters) and surface pressure (hPa), interpolated from MERRA2 3-hourly reanalysis
+!p_prof= pressure levels of MERRA2 (42 levels), interpolated from MERRA2 3-hourly reanalysis, scaled by 10
+!h_prof= geopotential height profile, in meters
+!t_prof= temperature profile, in Kelvin
+!qv_prof= specific humidity profile, in g/g
+!
+!z_ku= Ku-band uncorrected radar reflectivity profile, zFactorMeasured in 2A.GPM.DPR, aggregated to 88 bins, scaled by 100
+!z_ka= Ka-band uncorrected radar reflectivity profile, zFactorMeasured in 2A.GPM.DPR, aggregated to 88 bins, scaled by 100
+
+
+
+
+
 
 ! record structure (1334 bytes)
 
@@ -56,18 +166,17 @@ integer             ios
 !--------------
 
 integer i, j, k, m, nbad, bytes, irec
-integer :: nrec=0, nrec_all=0, ndbf=0, nf=0, nrain=0
+integer :: nrec_all=0, ndbf=0, nf=0, nrain=0
 integer i1, iclutter
 real thick, qv, delp, kPa, abstemp, densair, rmsd, ht, z_ku, z_ka, hs1
 character(len=32) pdate
 
-real ave_emis(NEM), std_emis(NEM)
+!real ave_emis(NEM), std_emis(NEM)
 real ave_pc(NEM), std_pc(NEM)
-!real b_all(NREG+1)(NEM)  ! regression coeffs for all NTBREG
-real b_all(NEM,NREG+1)   ! regression coeffs for all NTBREG
+!real b_all(NEM,NREG+1)   ! regression coeffs for all NTBREG
 real tmp(NREG+1), psum
-!real pc_e(NEM), e(NEM), u(NEM)(NEM)
-real pc_e(NEM), e(NEM), u(NEM,NEM)
+!real pc_e(NEM), e(NEM), u(NEM,NEM)
+real pc_e(NEM), e(NEM)
 character(len=512) svar
 integer id, k1, k2, kt
 real coeff_disc(NEM), disc, disc_mid
@@ -84,12 +193,6 @@ integer p, pow2(NEM_USE), ndb_files_used
 integer,allocatable,dimension(:) :: nrec_dbfile
 real gmi_freq(13) 
 data gmi_freq/10.7,10.7,18.6,18.6,21.65,36.5,36.5,89.0,89.0,166.0,166.0,186.31,190.31/
-
-
-! argc, argv
-character(len=512) :: ifilename
-
-
 
 
 ndb_files= NPCHIST**NEM_USE
@@ -111,8 +214,6 @@ do k= 0,NEM_USE-1
 end do
 
 
-
-
 !Format of PC_MIN_MAX file (11 lines)
 !EPC     min        max       bin0_min   bin0_max    bin1_min    bin1_max      then same for bins 2-9
 !
@@ -128,23 +229,23 @@ end do
 !  9   -0.99769    0.31942     -0.09440   -0.00514   -0.00514   -0.00288   -0.00288   -0.00172   -0.00172   -0.00090   -0.00090   -0.00018   -0.00018    0.00056    0.00056    0.00138    0.00138    0.00248    0.00248    0.00476    0.00476    0.06016
 ! 10   -0.18611    0.44873     -0.03368   -0.00364   -0.00364   -0.00224   -0.00224   -0.00134   -0.00134   -0.00060   -0.00060    0.00002    0.00002    0.00066    0.00066    0.00138    0.00138    0.00220    0.00220    0.00344    0.00344    0.04300
 
-!  Read EPC 10-bin histogram file */
-!  This is used to compute the database indices from the EPC structure */
-
-svar="PC_MIN_MAX_10_no_overlap.txt"
-!svar="PC_MIN_MAX_10_2pc_overlap.txt"
-open(10,file=svar,status="old")
-print '("")'
-print '("Opened ",A)', trim(svar)
-pc_range = -9999.
-do i = 1,NEM
-    read(10,*) k, pcmin, pcmax, (pc_range(:,j,i), j=1,NPCHIST)
-    pc_range(1,1,i)       = pcmin-100.0
-    pc_range(2,NPCHIST,i) = pcmax+100.0
-    !print *,j,pc_range(1,:,i),pc_range(2,:,i)
-
-end do
-close(10)
+!!  Read EPC 10-bin histogram file */
+!!  This is used to compute the database indices from the EPC structure */
+!
+!svar="PC_MIN_MAX_10_no_overlap.txt"
+!!svar="PC_MIN_MAX_10_2pc_overlap.txt"
+!open(10,file=svar,status="old")
+!print '("")'
+!print '("Opened ",A)', trim(svar)
+!pc_range = -9999.
+!do i = 1,NEM
+!    read(10,*) k, pcmin, pcmax, (pc_range(:,j,i), j=1,NPCHIST)
+!    pc_range(1,1,i)       = pcmin-100.0
+!    pc_range(2,NPCHIST,i) = pcmax+100.0
+!    !print *,j,pc_range(1,:,i),pc_range(2,:,i)
+!
+!end do
+!close(10)
 
 
 !  Read EPC coefficients file 
@@ -157,7 +258,7 @@ print '("Opened ",A)', trim(svar)
 b_all = -9999.
 do i = 1,NREG+1
     read(11,*) k,(b_all(j,i), j=1,NEM)
-    print *,i,b_all(:,i)
+    !print *,i,b_all(:,i)
 end do
 close(11)
 
@@ -191,40 +292,31 @@ end do
 close(13)
 
 
-!  Read ave EPC file
-svar="ave_pc.txt"
-open(14,file=svar,status="old")
-print '("")'
-print '("Opened ",A)', trim(svar)
-ave_pc = -9999.
-do i = 1,NEM
-    read(14,*) k,ave_pc(i), std_pc(i)
-    !print *,i,ave_pc(i), std_pc(i)
-end do
-close(14)
+!!  Read ave EPC file
+!svar="ave_pc.txt"
+!open(14,file=svar,status="old")
+!print '("")'
+!print '("Opened ",A)', trim(svar)
+!ave_pc = -9999.
+!do i = 1,NEM
+!    read(14,*) k,ave_pc(i), std_pc(i)
+!    !print *,i,ave_pc(i), std_pc(i)
+!end do
+!close(14)
 
 
-!
+
 !---------------------------------------------------------------------------
-if (iargc().lt.1) then
-    print *,"NO Input File"
-    print *,"USAGE:  cmd IFILE"
-    print *,"EXIT PROGRAM"
-    stop
-end if
-
-call getarg(1, ifilename)
-print *,trim(ifilename)
-open(15, file=trim(ifilename), form="unformatted", status="old", access="direct", recl=byte)
-nrec = 0
+print *,trim(idbname)
+open(15, file=trim(idbname), form="unformatted", status="old", access="direct", recl=byte)
 nrain= 0
 
 ios = 0    ! For gfortran
 irec=0
-do
-    irec=irec+1
+do irec =1,nrec
+    !irec=irec+1
     read(15,rec=irec, iostat=ios) prof
-    if (ios.ne.0) exit
+    !if (ios.ne.0) exit
 
     !---------------------------------------------------
     ! quality control on each DB record 
@@ -273,21 +365,25 @@ do
 
     ! print only the records where R > 10 
 
-    if ( prof%precip_NS_cmb .lt. 10 ) cycle
+    !if ( prof%precip_NS_cmb .lt. 10 ) cycle
     !if ( prof%precip_NS_cmb .lt. 0 ) cycle
 
-    print *,""
-    write(pdate, "(I4,'/',I2.2,'/',I2.2, ' ',I2.2,':',I2.2,':',I2.2)") prof%yyyy, prof%mm, prof%dd, prof%hh, prof%mn, prof%ss
-    print '(I7, I7.6, I5, I5, I5,I5," ", A )', nrec, prof%rev, prof%i_S1, prof%j_S1, prof%i_NS, prof%j_NS, pdate
-    print '(f8.3," ", f8.3)' , prof%glat1, prof%glon1
-    print '(I4, I5, I5, I5 )', prof%sfc_class, prof%sfc_min, prof%sfc_max, prof%elev
-    print '(f9.3, f9.3, f9.3 )', prof%ts, prof%t2m, prof%tqv
-    print '(f8.3 )', prof%precip_NS
-    print '(f8.3 )', prof%precip_NS_cmb
-    do i= 1,9
-        write(*,fmt='(f7.2 )',advance='no') prof%tb(i)
-    end do
-    print *,""
+    !print *,""
+    !write(pdate, "(I4,'/',I2.2,'/',I2.2, ' ',I2.2,':',I2.2,':',I2.2)") prof%yyyy, prof%mm, prof%dd, prof%hh, prof%mn, prof%ss
+    !print '(I7, I7.6, I5, I5, I5,I5," ", A )', irec, prof%rev, prof%i_S1, prof%j_S1, prof%i_NS, prof%j_NS, pdate
+    !print '(f8.3," ", f8.3)' , prof%glat1, prof%glon1
+    !print '(I4, I5, I5, I5 )', prof%sfc_class, prof%sfc_min, prof%sfc_max, prof%elev
+    !print '(f9.3, f9.3, f9.3 )', prof%ts, prof%t2m, prof%tqv
+    !print '(f8.3 )', prof%precip_NS
+    !print '(f8.3 )', prof%precip_NS_cmb
+    !do i= 1,9
+    !    write(*,fmt='(f7.2 )',advance='no') prof%tb(i)
+    !end do
+    !print *,""
+
+
+    ! precip
+    a1precip_NS(irec) = prof%precip_NS
 
 
     ! set up regression variables
@@ -311,7 +407,7 @@ do
 
 
     ! emissivity PC
-    write(*,fmt="(A)",advance="no") "EPC= "
+    !write(*,fmt="(A)",advance="no") "EPC= "
     do k= 1,NEM
         psum= 0.0
         do k2= 1,NREG+1
@@ -320,9 +416,12 @@ do
         end do
         pc_e(k)= psum
         prof%pc_emis(k)= pc_e(k)
-        write(*, fmt='(f8.4 )',advance="no") pc_e(k)
+        !write(*, fmt='(f8.4 )',advance="no") pc_e(k)
     end do
-    print *,""
+    !print *,""
+
+    a2pc(:,irec) = pc_e
+
 
     ! reconstruct emissivites from PC
     do k= 1,NEM
@@ -333,12 +432,12 @@ do
         end do
         e(k)= psum + ave_emis(k)
         prof%emis(k)= e(k)
-        if ( k .eq. 1 ) write(*,fmt="(A)",advance="no") "emis= "
-        if ( k .eq. NEM-1 ) write(*,fmt="(A)",advance="no") " Ts= "
-        if ( k .eq. NEM ) write(*,fmt="(A)",advance="no") "  Vap= "
-        write(*,"(f8.3 )",advance="no"), e(k)
+        !if ( k .eq. 1 ) write(*,fmt="(A)",advance="no") "emis= "
+        !if ( k .eq. NEM-1 ) write(*,fmt="(A)",advance="no") " Ts= "
+        !if ( k .eq. NEM ) write(*,fmt="(A)",advance="no") "  Vap= "
+        !write(*,"(f8.3 )",advance="no"), e(k)
     end do
-    print *,""
+    !print *,""
 
 
     ! Profile of geopot height, pressure, temperature, specific humidity */
@@ -346,130 +445,41 @@ do
     !  printf("%2d %8.2f %7.2f %6.2f %11.8f\n",j,prof.h_prof[j],prof.p_prof[j],prof.t_prof[j], prof.qv_prof[j]);
     !}*/
 
-    ! DPR radar reflectivity profiles
-    do j= 1,NLEV_NS
-        ht= 0.25*(NLEV_NS-j)
-        write(*,fmt='(I3," ",f6.3)',advance="no") j, ht
-        z_ku= 0.01*prof%z_ku(j)
-        iclutter= 0
-        if (( z_ku .lt. 0.0) .and. (z_ku .gt. -99.0 )) then
-            iclutter= 1
-            z_ku = z_ku*(-1.0)
-        end if
-        write(*,fmt='("  Ku=",I1," ",f6.2)',advance="no") iclutter, z_ku
-        if (( prof%j_NS .lt. 12).or.(prof%j_NS .gt. 36 )) then
-            print *,""
-            cycle
-        end if
-        z_ka= 0.01*prof%z_ka(j)
-        iclutter= 0
-        if ( (z_ka .lt. 0.0) .and. (z_ka .gt. -99.0 ))then
-            iclutter= 1
-            z_ka = z_ka*(-1.0)
-        end if
-        write(*,fmt='("  Ka= ",I1," ",f6.2)') iclutter, z_ka
-    end do
+    !! DPR radar reflectivity profiles
+    !do j= 1,NLEV_NS
+    !    ht= 0.25*(NLEV_NS-j)
+    !    write(*,fmt='(I3," ",f6.3)',advance="no") j, ht
+    !    z_ku= 0.01*prof%z_ku(j)
+    !    iclutter= 0
+    !    if (( z_ku .lt. 0.0) .and. (z_ku .gt. -99.0 )) then
+    !        iclutter= 1
+    !        z_ku = z_ku*(-1.0)
+    !    end if
+    !    write(*,fmt='("  Ku=",I1," ",f6.2)',advance="no") iclutter, z_ku
+    !    if (( prof%j_NS .lt. 12).or.(prof%j_NS .gt. 36 )) then
+    !        print *,""
+    !        cycle
+    !    end if
+    !    z_ka= 0.01*prof%z_ka(j)
+    !    iclutter= 0
+    !    if ( (z_ka .lt. 0.0) .and. (z_ka .gt. -99.0 ))then
+    !        iclutter= 1
+    !        z_ka = z_ka*(-1.0)
+    !    end if
+    !    write(*,fmt='("  Ka= ",I1," ",f6.2)') iclutter, z_ka
+    !end do
 
 
-    ! Calculate database bin indices that would be populated with this observation 
-
-    ! first index moving fastest
-    do i1= 1, ndb_files
-        ! First PC  ---------
-        k= 1
-        idxn(k)= mod(i1-1, NPCHIST)+1
-        found= 0
-        do j= 1,NPCHIST
-            pc_lo= pc_range(1,j,k)
-            pc_hi= pc_range(2,j,k)
-            !printf("%2d  i1=%d  pc=%f  range=%f %f   j=%d idx=%d\n", k, i1, pc_e[k], pc_lo, pc_hi, j , idxn[k] )
-
-
-
-            ! test
-            !if ( (pc_e(k) .gt. pc_lo) .and. (pc_e(k) .le. pc_hi) .and. (j .eq. idxn(k)) ) then
-            !found =1
-            !end if
-            !write(*,'("i1=",I6," k=",I6, " j=",I3" idxn=",I6 ," found=",I1)') i1, k, j, idxn(k), found
-            !if (found.eq.1) stop
-
-
-            if ( (pc_e(k) .gt. pc_lo) .and. (pc_e(k) .le. pc_hi) .and. (j .eq. idxn(k)) ) then
-                found=1
-                exit
-            end if
-        end do
-        if ( found .ne. 1 ) cycle
-        !write(*,'("AA found!! i1=",I6," k=",I3," j=",I3," idxn=",I3," found=",I2)') i1,k,j,idxn(k),found
-
-        ! 2nd ~ 2nd-last PC  ---------
-        do k= 2, NEM_USE-1
-          p= pow2(k-1)
-          idxn(k)= mod(((i1-1)/p) , NPCHIST)+1
-
-          found= 0
-          do j= 1, NPCHIST
-            pc_lo= pc_range(1,j,k)
-            pc_hi= pc_range(2,j,k)
-            !print *,k,"il=",il,"pc=",pc_e(k),"range=",pc_lo,pc_hi,"j=",j,"idx=",idxn(k)
-
-            if (( pc_e(k) .gt. pc_lo).and.(pc_e(k) .le. pc_hi).and.(j .eq. idxn(k) )) then
-                found=1
-                exit
-            end if
-          end do
-          if ( found .ne. 1 ) goto 10
-          !write(*,'("BB found!! i1=",I6," k=",I3," j=",I3," idxn=",I3," found=",I2)') i1,k,j,idxn(k),found
-        end do
-
-        ! last PC  ---------
-        k= NEM_USE
-        idxn(k)= (i1-1)/pow2(k-1) +1
-        !print *,"i1=",i1,"k=",k,"idxn(k)=",idxn(k)
-
-        found= 0
-        do j= 1, NPCHIST
-          pc_lo= pc_range(1,j,k)
-          pc_hi= pc_range(2,j,k)
-          !write(*,'("CC i1=",I6," k=",I3," j=",I3," idxn=",I3," found=",I2)') i1,k,j,idxn(k),found
-          if ( (pc_e(k) .gt. pc_lo) .and. (pc_e(k) .le. pc_hi) .and. (j .eq. idxn(k)) )then
-            found=1
-            exit
-          end if  
-        end do
-        if ( found .ne. 1 ) cycle
-        !write(*,'("CC found!! i1=",I6," k=",I3," j=",I3," idxn=",I3," found=",I2)') i1,k,j,idxn(k),found
-
-        idx= 0
-        do k=1,NEM_USE
-          idx = idx + (idxn(k)-1)*pow2(k-1)
-        end do
-        nrec_dbfile(idx)=1
-
-        do k=1, NEM_USE
-          write(*,fmt='(I6," ")',advance="no") idxn(k)
-        end do
-
-        write(*,fmt='("  index=",I6)') idx
-        if (( idx .lt. 1).or.(idx .ge. ndb_files)) then
-          write(*,'("Exceeded max files", I6)') idx
-          stop
-        end if
-
-!        nrec_dbfile[idx]++;
-!        /*printf("%5d  N=%d\n", idx, nrec_dbfile[idx]);*/
-
-10      continue
-    end do
-
-    nrec = nrec + 1
     if ( prof%precip_NS_cmb .gt. 0.0 ) nrain=nrain+1
 
     ! next record */
+    !print *,"irec=",irec
 end do
 close(15)
 
-ndbf = sum(nrec_dbfile)
-write(*,'(A,"  N=",I7,"  Nraining=",I7, "  N_dbfiles=",I7)') trim(ifilename),nrec, nrain, ndbf 
+!ndbf = sum(nrec_dbfile)
+!!write(*,'(A,"  N=",I7,"  Nraining=",I7, "  N_dbfiles=",I7)') trim(idbname),irec, nrain, ndbf 
+return 
+END SUBROUTINE read_db
 
-end program
+END MODULE f_read_db
