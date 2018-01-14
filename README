@@ -1,5 +1,17 @@
-# -How to compile
+#HOW TO COMPILE
+#By N.UTSUMI
+
+#---- for read_DB_files_Nobuyuki.c ---
 gcc -fpack-struct FILE.c -lm -o OUTNAME
 # "-lm" option is requred for math.h
 # "-lm" should be placed after source file
+
+#---- for retrieval code ---
+gcc -fpack-struct FILE.c -L/usr/local/lib -lnetcdf -lm -I/usr/local/include -o OUTNAME
+# "-lnetcdf" and "-lm" options is requred for netcdf and math.h
+# IMPORTANT!!: link options ("-netcdf" and "-lm") should be placed after source file
+# (Not know the reason ..)
+
+
+
 

@@ -1,0 +1,158 @@
+#! /bin/tcsh -xvf
+
+set codedir = /Users/jturk/code/GPM/GPM_DB_V5
+set outdir = /Users/jturk/code/GPM/GPM_DB_V5/EPC_DB_ENTRIES_V5
+
+set case = 2
+
+if ( $case == 2 ) then
+  set clat = -39
+  set clon = -63
+  set f = /Volumes/18TB-RAID/satdata/GPM-V5/1C.F18.SSMIS/2016/1C.F18.SSMIS.XCAL2016-V.20160122-S000009-E014206.032284.V05A.HDF5
+  set g = /Volumes/18TB-RAID/satdata/GPM-V5/2A.F18.SSMIS.GPROF/2016/2A.F18.SSMIS.GPROF2017v1.20160122-S000009-E014206.032284.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2016/2A.GPM.DPR.V7-20170308.20160121-S230338-E003607.010787.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2016/2B.GPM.DPRGMI.CORRA2016.20160121-S230338-E003607.010787.V05A.HDF5
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2016/1B.GPM.GMI.TB2016.20160121-S230338-E003607.010787.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2016/2A.GPM.GMI.GPROF2017v1.20160121-S230338-E003607.010787.V05A.HDF5
+endif
+
+if ( $case == 4 ) then
+  set clat = -26
+  set clon = -55
+  set f = /Volumes/18TB-RAID/satdata/GPM-V5/1C.F16.SSMIS/2015/1C.F16.SSMIS.XCAL2016-V.20151214-S201455-E215649.062723.V05A.HDF5
+  set g = /Volumes/18TB-RAID/satdata/GPM-V5/2A.F16.SSMIS.GPROF//2015/2A.F16.SSMIS.GPROF2017v1.20151214-S201455-E215649.062723.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2015/2A.GPM.DPR.V7-20170308.20151214-S202855-E220128.010194.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA//2015/2B.GPM.DPRGMI.CORRA2016.20151214-S202855-E220128.010194.V05A.HDF5
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI//2015/1B.GPM.GMI.TB2016.20151214-S202855-E220128.010194.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF//2015/2A.GPM.GMI.GPROF2017v1.20151214-S202855-E220128.010194.V05A.HDF5
+endif
+
+if ( $case == 5 ) then
+  set clat = -8
+  set clon = 157
+  set f = /Volumes/18TB-RAID/satdata/GPM-V5/1C.F17.SSMIS/2015/1C.F17.SSMIS.XCAL2016-V.20150701-S073822-E092016.044652.V05A.HDF5
+  set g = /Volumes/18TB-RAID/satdata/GPM-V5/2A.F17.SSMIS.GPROF//2015/2A.F17.SSMIS.GPROF2017v1.20150701-S073822-E092016.044652.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2015/2A.GPM.DPR.V7-20170308.20150701-S072851-E090123.007603.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2015/2B.GPM.DPRGMI.CORRA2016.20150701-S072851-E090123.007603.V05A.HDF5
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2015/1B.GPM.GMI.TB2016.20150701-S072851-E090123.007603.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2015/2A.GPM.GMI.GPROF2017v1.20150701-S072851-E090123.007603.V05A.HDF5
+endif
+
+if ( $case == 6 ) then
+  set clat = 35
+  set clon = -28
+  set f = /Volumes/18TB-RAID/satdata/GPM-V5/1C.F18.SSMIS/2016/1C.F18.SSMIS.XCAL2016-V.20160123-S081727-E095924.032303.V05A.HDF5
+  set g = /Volumes/18TB-RAID/satdata/GPM-V5/2A.F18.SSMIS.GPROF//2016/2A.F18.SSMIS.GPROF2017v1.20160123-S081727-E095924.032303.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2016/2A.GPM.DPR.V7-20170308.20160123-S085854-E103124.010809.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2016/2B.GPM.DPRGMI.CORRA2016.20160123-S085854-E103124.010809.V05A.HDF5
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2016/1B.GPM.GMI.TB2016.20160123-S085854-E103124.010809.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2016/2A.GPM.GMI.GPROF2017v1.20160123-S085854-E103124.010809.V05A.HDF5
+endif
+
+if ( $case == 7 ) then
+  set clat = 14
+  set clon = 2
+  set f = /Volumes/18TB-RAID/satdata/GPM-V5/1C.F18.SSMIS/2014/1C.F18.SSMIS.XCAL2016-V.20140802-S062151-E080348.024690.V05A.HDF5
+  set g = /Volumes/18TB-RAID/satdata/GPM-V5/2A.F18.SSMIS.GPROF/2014/2A.F18.SSMIS.GPROF2017v1.20140802-S062151-E080348.024690.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2014/2A.GPM.DPR.V7-20170308.20140802-S062222-E075455.002421.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2014/2B.GPM.DPRGMI.CORRA2016.20140802-S062222-E075455.002421.V05A.HDF5
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2014/1B.GPM.GMI.TB2016.20140802-S062222-E075455.002421.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2014/2A.GPM.GMI.GPROF2017v1.20140802-S062222-E075455.002421.V05A.HDF5
+endif
+
+
+if ( $case == 8 ) then
+  #  Case from the QJRMS paper
+  set clat = 32
+  set clon = -94
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2016/2A.GPM.DPR.V7-20170308.20160418-S115529-E132803.012149.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2016/2B.GPM.DPRGMI.CORRA2016.20160418-S115529-E132803.012149.V05A.HDF5
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2016/1B.GPM.GMI.TB2016.20160418-S115529-E132803.012149.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2016/2A.GPM.GMI.GPROF2017v1.20160418-S115529-E132803.012149.V05A.HDF5
+endif
+
+if ( $case == 9 ) then
+  #  Harvey
+  set clat = 29.5
+  set clon = -95
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2017/1B.GPM.GMI.TB2016.20170825-S111924-E125156.019833.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2017/2A.GPM.DPR.V7-20170308.20170825-S111924-E125156.019833.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2017/2A.GPM.GMI.GPROF2017v1.20170825-S111924-E125156.019833.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2017/2B.GPM.DPRGMI.CORRA2016.20170825-S111924-E125156.019833.V05A.HDF5
+endif
+
+
+if ( $case == 10 ) then
+  #  Harvey
+  set clat = 29.5
+  set clon = -95
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2017/1B.GPM.GMI.TB2016.20170827-S202340-E215612.019870.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2017/2A.GPM.DPR.V7-20170308.20170827-S202340-E215612.019870.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2017/2A.GPM.GMI.GPROF2017v1.20170827-S202340-E215612.019870.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2017/2B.GPM.DPRGMI.CORRA2016.20170827-S202340-E215612.019870.V05A.HDF5
+endif
+
+if ( $case == 11 ) then
+  #  Tasmania
+  set clat = -41.3
+  set clon = 145.3
+  set gmi = /Volumes/18TB-RAID/satdata/GPM-V5/1B.GPM.GMI/2016/1B.GPM.GMI.TB2016.20160622-S222944-E000218.013167.V05A.HDF5
+  set dpr = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.DPR/2016/2A.GPM.DPR.V7-20170308.20160622-S222944-E000218.013167.V05A.HDF5
+  set gprof = /Volumes/18TB-RAID/satdata/GPM-V5/2A.GPM.GMI.GPROF/2016/2A.GPM.GMI.GPROF2017v1.20160622-S222944-E000218.013167.V05A.HDF5
+  set cmb = /Volumes/18TB-RAID/satdata/GPM-V5/2B.GPM.DPRGMI.CORRA/2016/2B.GPM.DPRGMI.CORRA2016.20160622-S222944-E000218.013167.V05A.HDF5
+endif
+
+
+
+set x = `basename $gmi`
+set rev = `echo $x | cut -d . -f 6`
+
+set ns = 0
+set nsfile = `ls -x $outdir/*_${rev}_*.NS.nc`
+if ( $status == 0 ) then
+  set ns = 1 
+endif
+
+set ms = 0
+set msfile = `ls -x $outdir/*_${rev}_*.MS.nc`
+if ( $status == 0 ) then
+  set ms = 1
+endif
+
+
+set fname = `basename $gmi`
+set model = $codedir/$fname.MERRA2.nc 
+if ( ! -e $model ) then
+  $codedir/interp_MERRA2_GMI $gmi $model
+endif
+if ( ! -e $model ) then
+  echo $model not generated
+  exit 1
+endif
+
+
+
+#if ( $ns == 0 ) then
+  #$codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi NS $clat $clon $outdir $gprof $model
+  $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V3 $gmi $clat $clon $outdir $gprof $model
+
+#  python $codedir/compare_TB.py $nsfile $nsfile.tb_diff.png
+#  python $codedir/compare_precip_GMI.py $nsfile $cmb $dpr $nsfile.precip.png
+#  python $codedir/plot_DPR_prof_GMI.py $nsfile 110 $nsfile.dpr_prof_110.png
+#endif
+
+exit
+
+if ( $ms == 0 ) then
+  echo $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V3 $gmi MS $clat $clon $outdir $gprof $model
+  #echo $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi MS $clat $clon $outdir $gprof $model
+  #$codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi MS $clat $clon $outdir $gprof $model
+
+#  python $codedir/compare_TB.py $msfile $msfile.tb_diff.png
+#  python $codedir/compare_precip_GMI.py $msfile $cmb $dpr $msfile.precip.png
+#  python $codedir/plot_DPR_prof_GMI.py $msfile 110 $msfile.dpr_prof_110.png
+endif
+
+
+exit 1
+
