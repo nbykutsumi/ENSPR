@@ -4,14 +4,8 @@ import numpy as np
 from sklearn.decomposition import PCA
 from numpy import *
 import os, sys
+import JPLDB2
 
-dbNum   = 834
-srcDir  = "/home/utsumi/mnt/wellshare/data/JPLDB/GMI_dbase_PC_prof2_V5_NPC4_BIN10_OVERLAP1"
-idbPath = srcDir + "/" + "db_%05d.bin"%(dbNum)
-
-unitsize  = 1334  # byte
-nrec = os.path.getsize(idbPath)/unitsize  # byte
-
-ldb  = f_read_db.read_db_multi(idbPath, nrec)
-print len(ldb)
-
+jpldb = JPLDB2.JPLDB()
+jpldb("GMI_dbase_PC_prof2_V5")
+gn = jpldb.loadDBgranule(2014,9,1,2885)

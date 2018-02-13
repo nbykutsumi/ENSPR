@@ -2,6 +2,7 @@ import matplotlib
 matplotlib.use("Agg")
 from numpy import *
 from sklearn.decomposition import PCA
+from sklearn import linear_model
 import JPLDB as JPLDB
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,14 +32,14 @@ def ret_ldbID():
 
 
 
-#ldbID  = [6363]
-ldbID   = ret_ldbID()
+ldbID  = [3128]
+#ldbID   = ret_ldbID()
 varType = "EMIS"
 #-------------------------------------------------------
 
-def findMaxCorr(a2m, a1x):
+def findMaxCorr(a2m, a1y):
     # shape of a2m = (nobs,11)
-    # shape of a1x = (nobs)
+    # shape of a1y = (nobs)
 
     #----------------------
     # A = inv(Cm) (Cm,x) inv(Cx) (Cm,x).T  # npc x npc matrix
@@ -49,10 +50,10 @@ def findMaxCorr(a2m, a1x):
         print "nobs=1, exit"
         return None,None,None,None
 
-    Cmx = array([ sum( (a2m[:,i] - mean(a2m[:,i]))*(a1x-mean(a1x)))/(nobs-1) for i in range(npc)]).reshape(npc,-1)   # (npc x 1)
+    Cmx = array([ sum( (a2m[:,i] - mean(a2m[:,i]))*(a1y-mean(a1y)))/(nobs-1) for i in range(npc)]).reshape(npc,-1)   # (npc x 1)
 
     Cm    = np.cov(a2m, rowvar=0, bias=0)     # (npc x npc)
-    Cx  = np.var(a1x, ddof=1)   # scalar
+    Cx  = np.var(a1y, ddof=1)   # scalar
 
 
     #-- check if Cm is invertable --
@@ -71,7 +72,7 @@ def findMaxCorr(a2m, a1x):
         if np.iscomplex(a1ktmp).sum()>0: continue
 
         a1kmtmp = np.dot(a1ktmp.real, a2m.T)
-        corr= np.corrcoef( a1kmtmp, a1x)[0,1]
+        corr= np.corrcoef( a1kmtmp, a1y)[0,1]
         if abs(corrmax) < abs(corr):
             corrmax = corr
             a1k     = a1ktmp
@@ -90,7 +91,7 @@ for dbID in ldbID:
     #----------------------
     # m = a2pc,  x = pr
     #----------------------
-    a1x = db.a1precip_NS
+    a1y = db.a1precip_NS
 
     if   varType == "PC":
         a2m = db.a2pc_emis
@@ -119,18 +120,19 @@ for dbID in ldbID:
         sys.exit()
 
     #----------------------
-    # remove a1x (a1pr) ==0
+    # remove a1y (a1pr) ==0
     #----------------------
-    a1idx = arange(len(a1x)).astype(int32)
-    a1idx = ma.masked_where(a1x==0, a1idx).compressed()
+    a1idx = arange(len(a1y)).astype(int32)
+    a1idx = ma.masked_where(a1y==0, a1idx).compressed()
 
     a2in = a2in[a1idx,:]
-    a1x  = a1x [a1idx]
+    a1y  = a1y [a1idx]
 
-    if a1x.shape[0]==0:
+    if a1y.shape[0]==0:
         print "NO Precipitation",dbID
         continue
 
+    #"""
     #----------------------
     # PCA
     #----------------------
@@ -143,17 +145,17 @@ for dbID in ldbID:
 
 
     #----------------------
-    a1k, a1km, ikmax, corrmax = findMaxCorr(a2m, a1x)
+    a1k, a1km, ikmax, corrmax = findMaxCorr(a2m, a1y)
     if type(a1k) == "NoneType":continue
 
     #-- Figure -
     fig = plt.figure(figsize=(3,3))
     ax  = fig.add_axes([0.25,0.2, 0.7, 0.7])
 
-    ax.plot(a1km, a1x, ".",color="k",)
+    ax.plot(a1km, a1y, ".",color="k",)
 
     #-- num -
-    plt.text(0.3,0.91, "Num=%d"%(len(a1x)),fontsize=12, transform=ax.transAxes)
+    plt.text(0.3,0.91, "Num=%d"%(len(a1y)),fontsize=12, transform=ax.transAxes)
     #-- title -
     stitle = "%s  ID:%04d (Corr.=%.2f)"%(varType, dbID, corrmax)
     plt.title(stitle)
@@ -169,5 +171,84 @@ for dbID in ldbID:
 
 
      
+    #*****************
+    # CDF matching
+    #-----------------
+    if corrmax>=0:
+        a1x_sorted = sort(a1km)
+        a1y_sorted = sort(a1y)
+    elif corrmax<0:
+        a1x_sorted = sort(a1km)
+        a1y_sorted = sort(a1y)[::-1]
+
+
+    #-- Figure -
+    fig = plt.figure(figsize=(3,3))
+    ax  = fig.add_axes([0.25,0.2, 0.7, 0.7])
+
+    ax.plot(a1x_sorted, a1y_sorted, "-",color="k",)
+
+    #-- num -
+    plt.text(0.3,0.91, "Num=%d"%(len(a1y)),fontsize=12, transform=ax.transAxes)
+    #-- title -
+    stitle = "%s  ID:%04d (Corr.=%.2f)"%(varType, dbID, corrmax)
+    plt.title(stitle)
+
+    #-- axis-label -
+    plt.xlabel(varType, fontsize=12)
+    plt.ylabel("Precipitation [mm/h]", fontsize=12)
+
+    figDir = "/home/utsumi/mnt/wellshare/ENSPR/JPLDB/pict"
+    figPath= figDir + "/cdfmatch.%s.vs.Prcp.%04d.png"%(varType,dbID)
+    plt.savefig(figPath)
+    print figPath
+    #"""
+
+    """
+    #*****************
+    # Linear fitting
+    #-----------------
+    nsamples = a2in.shape[0]
+    a1std    = a2in.std(axis=0)
+    a2x      = a2in/a1std
+    lm = linear_model.LinearRegression()
+    lm.fit(a2x, a1y)
+
+    a1coef   = lm.coef_
+    intersept= lm.intercept_
+    score    = lm.score(a2x, a1y)
+    a1est    = np.dot(a2x, a1coef.reshape(-1,1)) + intersept
+
+    print a1coef
+    #-- figure -
+    fig = plt.figure(figsize=(3,3))
+    ax  = fig.add_axes([0.25,0.2, 0.7, 0.7])
+
+    #-- scatter -
+    ax.plot(a1y, a1est, "o",color="k",markersize=1)
+
+    #-- 1:1 line -
+    x1 = max(a1est.max()*1.2, a1y.max()*1.2)
+    ax.plot([0,x1],[0,x1],"--",color="k", linewidth=0.5)
+
+    #-- axis-lim---
+    ax.set_xlim([-0.2, x1]) 
+    ax.set_ylim([-0.2, x1]) 
+ 
+    #-- num -
+    plt.text(0.3,0.91, "Num=%d"%(len(a1y)),fontsize=12, transform=ax.transAxes)
+    #-- title -
+    stitle = "%s  ID:%04d (R2=%.2f)"%(varType, dbID, score) 
+    plt.title(stitle)
+
+    #-- axis-label -
+    plt.xlabel("Precip (Obs) [mm/h]", fontsize=12)
+    plt.ylabel("Precip (Est) [mm/h]", fontsize=12)
+
+    figDir = "/home/utsumi/mnt/wellshare/ENSPR/JPLDB/pict"
+    figPath= figDir + "/linear.%s.vs.Prcp.%04d.png"%(varType,dbID)
+    plt.savefig(figPath)
+    print figPath
+    """
 
 

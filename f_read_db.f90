@@ -104,6 +104,7 @@ CONTAINS
 !--------------------------------------------------
 SUBROUTINE read_db_multi(idbname, nrec&
                         ,a1yyyy,a1mm,a1dd,a1hh,a1mn,a1ss &
+                        ,a1timediff &
                         ,a1SC_orientation, a1i_S1, a1j_S1, a1i_NS, a1j_NS &
                         ,a1sfc_class &
                         ,a1precip_NS &
@@ -155,8 +156,8 @@ integer             nrec
 !f2py intent(in)    nrec
 
 !-- out -----------------
-integer*2,dimension(nrec) :: a1yyyy,a1mm,a1dd,a1hh,a1mn,a1ss
-!f2py intent(out)            a1yyyy,a1mm,a1dd,a1hh,a1mn,a1ss
+integer*2,dimension(nrec) :: a1yyyy,a1mm,a1dd,a1hh,a1mn,a1ss, a1timediff
+!f2py intent(out)            a1yyyy,a1mm,a1dd,a1hh,a1mn,a1ss, a1timediff
 
 integer*2,dimension(nrec) :: a1SC_orientation, a1i_S1, a1j_S1, a1i_NS, a1j_NS
 !f2py intent(out)            a1SC_orientation, a1i_S1, a1j_S1, a1i_NS, a1j_NS
@@ -559,6 +560,7 @@ do irec =1,nrec
     a1hh(irec)        = prof%hh
     a1mn(irec)        = prof%mn
     a1ss(irec)        = prof%ss
+    a1timediff(irec)  = prof%timediff
     a1SC_orientation(irec) = prof%SC_orientation
     a1i_S1(irec)      = prof%i_S1
     a1j_S1(irec)      = prof%j_S1
