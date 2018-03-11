@@ -30,7 +30,8 @@ def ret_ldbID():
         corr = float(line[2])
         #if ((0.27<corr) & (corr<0.3) & (num<1000)&(num>300)):
         #if ((corr >0.7) & (num>1000) & (num<10000) & (dbID>325)):
-        if ((corr >0.7) & (800>num)&(num>700)):
+        #if ((corr >0.7) & (700<num)&(num<800)):
+        if ((corr >0.7) & (2000<num)&(num<2500)):
             ldbID.append(dbID)
     return ldbID
 
@@ -152,7 +153,7 @@ jpldb()
 a1ave_pc, a1std_pc = load_ave_std_pc()
 
 #ldbID = [1159]
-#ldbID = ret_ldbID()
+ldbID = ret_ldbID()
 
 for dbID in ldbID:
     print dbID

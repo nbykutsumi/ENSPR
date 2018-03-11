@@ -28,6 +28,10 @@ prdVer  = '05'
 
 tb      = GPyM.GPM(prj, prdLv, prdVer)
 #-----------
+#dbID    = 1159
+#dbID    = 2235
+dbID    = 7263
+
 
 ir    = MERGIR.MERGIR()
 LatIR = ir.Lat
@@ -131,11 +135,12 @@ def single_fig_KuPR(DTime, lat, lon, BBox, figPath, cbarPath, scatterFlag=True, 
     M      = Basemap( resolution="l", llcrnrlat=lllat, llcrnrlon=lllon, urcrnrlat=urlat, urcrnrlon=urlon, ax=axmap)
     
     #- plot -
+    vmin, vmax=0, 30
     if scatterFlag==True:
-        im = M.scatter(Lon,Lat,c=Dat, cmap="jet", vmin=0, vmax=30,s=20)
+        im = M.scatter(Lon,Lat,c=Dat, cmap="jet", vmin=vmin, vmax=vmax,s=20)
     else:
         clevels = np.arange(0,30+1,1)
-        im = M.contourf(Lon,Lat,Dat, extend="max",cmap="jet")
+        im = M.contourf(Lon,Lat,Dat, extend="max",cmap="jet", vmin=vmin, vmax=vmax)
     
     #- coastlines
     M.drawcoastlines()
@@ -157,7 +162,7 @@ def single_fig_KuPR(DTime, lat, lon, BBox, figPath, cbarPath, scatterFlag=True, 
     M.drawmeridians(meridians, labels=[0,0,0,1], fontsize=8,linewidth=0.5,rotation=60, fmt="%d")
     
     #-- title --
-    stitle = "KuPR %04d/%02d/%02d %02d:%02d NS=%.1f"%(Year,Mon,Day,Hour,Mnt, DPR)
+    stitle = "KuPR %04d/%02d/%02d %02d:%02d NS=%.1f Dist=%.2f"%(Year,Mon,Day,Hour,Mnt, DPR, dist)
     plt.title(stitle, fontsize=10)
     #-- save
     figmap.savefig(figPath)
@@ -189,11 +194,16 @@ def single_fig_TB(DTime, lat, lon, BBox, figPath, cbarPath, chName, scatterFlag=
     M      = Basemap( resolution="l", llcrnrlat=lllat, llcrnrlon=lllon, urcrnrlat=urlat, urcrnrlon=urlon, ax=axmap)
     
     #- plot -
+    if chName in ["10V","10H"]:
+        vmin, vmax = 80,150
+    elif chName in ["89V","89H"]:
+        vmin, vmax = 120, 300
     if scatterFlag==True:
-        im = M.scatter(Lon,Lat,c=Dat, cmap="jet",s=28, vmin=120, vmax=300)
+        im = M.scatter(Lon,Lat,c=Dat, cmap="jet",s=28, vmin=vmin, vmax=vmax)
+        #im = M.scatter(Lon,Lat,c=Dat, cmap="jet",s=28)
     else:
         clevels = np.arange(120,300+1,5)
-        im = M.contourf(Lon,Lat,Dat, extend="both",cmap="jet")
+        im = M.contourf(Lon,Lat,Dat, extend="both",cmap="jet", vmin=vmin, vmax=vmax)
  
     
     #- coastlines
@@ -233,24 +243,26 @@ def single_fig_TB(DTime, lat, lon, BBox, figPath, cbarPath, chName, scatterFlag=
 
 
 #----------------------------
-dbID    = 1159
 csvDir  = "/home/utsumi/mnt/wellshare/ENSPR/JPLDB/csv"
-csvPath = csvDir + "/cmpEntries.%05d.csv"%(dbID)
+#csvPath = csvDir + "/cmpEntries.%05d.csv"%(dbID)
+csvPath = csvDir + "/cmp.Simil.Emis.%05d.csv"%(dbID)
 f = open(csvPath); lines=f.readlines(); f.close()
+targetidx = int(lines[1].split(",")[0])
+
 #for line in lines[1+11:]:
 for line in lines[1:]:
     line = line.split(",")
     idx  = int(line[0])
     KuNS = float(line[1])
-    Year = int(line[3])
-    Mon  = int(line[4])
-    Day  = int(line[5])
-    Hour = int(line[6])
-    Mnt  = int(line[7])
-    lat  = float(line[9])
-    lon  = float(line[10])
+    dist = float(line[3])
+    Year = int(line[4])
+    Mon  = int(line[5])
+    Day  = int(line[6])
+    Hour = int(line[7])
+    Mnt  = int(line[8])
+    lat  = float(line[10])
+    lon  = float(line[11])
 
-    #if idx != 6418: continue
     MntIR    = int(Mnt/30)*30
     DTime    = datetime(Year,Mon,Day,Hour,Mnt)
     DTimeIR  = datetime(Year,Mon,Day,Hour,MntIR)
@@ -261,6 +273,7 @@ for line in lines[1:]:
     BBoxZoom     = [[lat-dlatlon, lon-dlatlon],[lat+dlatlon, lon+dlatlon]]
     
     figDir  = "/home/utsumi/mnt/wellshare/ENSPR/JPLDB/pict"
+    #figDir  = "/home/utsumi/fig"
     
     #- IR --
     figPath = figDir + "/IR.wide.%d.png"%(idx)
@@ -274,7 +287,7 @@ for line in lines[1:]:
     #- KuPR --
     figPath = figDir + "/KuPR.wide.%d.png"%(idx)
     cbarPath = figDir + "/cbar.KuPR.png"
-    single_fig_KuPR(DTime, lat, lon, BBoxWide, figPath, cbarPath, scatterFlag=False, DPR=KuNS)
+    single_fig_KuPR(DTime, lat, lon, BBoxWide, figPath, cbarPath, scatterFlag=True, DPR=KuNS)
     
     figPath = figDir + "/KuPR.zoom.%d.png"%(idx)
     cbarPath = figDir + "/cbar.KuPR.png"
@@ -285,20 +298,20 @@ for line in lines[1:]:
     #S1: 10V 10H 19V 19H 23V 37V 37H 89V 89H
     chName  = "10H"
     figPath = figDir + "/TB.%s.wide.%d.png"%(chName,idx)
-    cbarPath = figDir + "/cbar.TB.png"
-    single_fig_TB(DTime, lat, lon, BBoxWide, figPath, cbarPath, chName, scatterFlag=False)
+    cbarPath= figDir + "/cbar.TB.%s.png"%(chName)
+    single_fig_TB(DTime, lat, lon, BBoxWide, figPath, cbarPath, chName, scatterFlag=True)
     
     figPath = figDir + "/TB.%s.zoom.%d.png"%(chName,idx)
-    cbarPath = figDir + "/cbar.TB.png"
+    cbarPath= figDir + "/cbar.TB.%s.png"%(chName)
     single_fig_TB(DTime, lat, lon, BBoxZoom, figPath, cbarPath, chName, scatterFlag=True)
     
     chName  = "89H"
     figPath = figDir + "/TB.%s.wide.%d.png"%(chName,idx)
-    cbarPath = figDir + "/cbar.TB.png"
-    single_fig_TB(DTime, lat, lon, BBoxWide, figPath, cbarPath, chName, scatterFlag=False)
+    cbarPath = figDir + "/cbar.TB.%s.png"%(chName)
+    single_fig_TB(DTime, lat, lon, BBoxWide, figPath, cbarPath, chName, scatterFlag=True)
     
     figPath = figDir + "/TB.%s.zoom.%d.png"%(chName,idx)
-    cbarPath = figDir + "/cbar.TB.png"
+    cbarPath = figDir + "/cbar.TB.%s.png"%(chName)
     single_fig_TB(DTime, lat, lon, BBoxZoom, figPath, cbarPath, chName, scatterFlag=True)
     
     #- Join --
@@ -315,7 +328,8 @@ for line in lines[1:]:
     
     cbarPath0 = figDir + "/cbar.IR.png"
     cbarPath1 = figDir + "/cbar.KuPR.png"
-    cbarPath2 = figDir + "/cbar.TB.png"
+    cbarPath2 = figDir + "/cbar.TB.10H.png"
+    cbarPath3 = figDir + "/cbar.TB.89H.png"
     
     a2img0 = load_img(figPath0)
     a2img1 = load_img(figPath1)
@@ -329,15 +343,16 @@ for line in lines[1:]:
     a2cbar0 = load_img(cbarPath0)
     a2cbar1 = load_img(cbarPath1)
     a2cbar2 = load_img(cbarPath2)
+    a2cbar3 = load_img(cbarPath3)
     
     a2line0 = concatenate([a2img0,a2img1, a2img2, a2img3], axis=1)
     a2line1 = concatenate([a2img4,a2img5, a2img6, a2img7], axis=1)
-    a2linecbar = concatenate([a2cbar0,a2cbar1, a2cbar2, a2cbar2], axis=1)
+    a2linecbar = concatenate([a2cbar0,a2cbar1, a2cbar2, a2cbar3], axis=1)
     
     
     a2out   = concatenate([a2line0,a2linecbar,a2line1,a2linecbar], axis=0)
     oimg    = Image.fromarray(a2out)
-    oPath   = figDir + "/join.snap.db%04d.idx.%d.png"%(dbID,idx)
+    oPath   = figDir + "/join.snap.db%04d.tgt.%d.idx.%d.png"%(dbID,targetidx, idx)
     oimg.save(oPath)
     print oPath
     os.remove(figPath0)
@@ -351,3 +366,4 @@ for line in lines[1:]:
     os.remove(cbarPath0)
     os.remove(cbarPath1)
     os.remove(cbarPath2)
+    os.remove(cbarPath3)

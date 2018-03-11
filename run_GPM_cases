@@ -1,9 +1,24 @@
 #! /bin/tcsh -xvf
 
-set codedir = /Users/jturk/code/GPM/GPM_DB_V5
-set outdir = /Users/jturk/code/GPM/GPM_DB_V5/EPC_DB_ENTRIES_V5
+#set codedir = /Users/jturk/code/GPM/GPM_DB_V5
+#set outdir = /Users/jturk/code/GPM/GPM_DB_V5/EPC_DB_ENTRIES_V5
+set codedir = /home/utsumi/bin/ENSPR
+set outdir = /home/utsumi/bin/ENSPR
 
-set case = 2
+
+set case = 99
+
+if ( $case == 99 ) then
+  set clat = 26
+  set clon = 121
+  set f = None
+  set g = None
+  set dpr = None
+  set cmb = None
+  set gmi = /home/utsumi/bin/ENSPR/1B.GPM.GMI.TB2016.20160121-S230338-E003607.010787.V05A.HDF5
+  set gprof = None
+endif
+
 
 if ( $case == 2 ) then
   set clat = -39
@@ -122,19 +137,20 @@ endif
 
 set fname = `basename $gmi`
 set model = $codedir/$fname.MERRA2.nc 
-if ( ! -e $model ) then
-  $codedir/interp_MERRA2_GMI $gmi $model
-endif
-if ( ! -e $model ) then
-  echo $model not generated
-  exit 1
-endif
+#if ( ! -e $model ) then
+#  $codedir/interp_MERRA2_GMI $gmi $model
+#endif
+#if ( ! -e $model ) then
+#  echo $model not generated
+#  exit 1
+#endif
 
 
 
 #if ( $ns == 0 ) then
   #$codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi NS $clat $clon $outdir $gprof $model
-  $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V3 $gmi $clat $clon $outdir $gprof $model
+  #$codedir/EPC_ret_GMI_V5_read_interp_model_cold_V3 $gmi $clat $clon $outdir $gprof $model
+  $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V4 $gmi $clat $clon $outdir
 
 #  python $codedir/compare_TB.py $nsfile $nsfile.tb_diff.png
 #  python $codedir/compare_precip_GMI.py $nsfile $cmb $dpr $nsfile.precip.png
@@ -142,17 +158,17 @@ endif
 #endif
 
 exit
-
-if ( $ms == 0 ) then
-  echo $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V3 $gmi MS $clat $clon $outdir $gprof $model
-  #echo $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi MS $clat $clon $outdir $gprof $model
-  #$codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi MS $clat $clon $outdir $gprof $model
-
-#  python $codedir/compare_TB.py $msfile $msfile.tb_diff.png
-#  python $codedir/compare_precip_GMI.py $msfile $cmb $dpr $msfile.precip.png
-#  python $codedir/plot_DPR_prof_GMI.py $msfile 110 $msfile.dpr_prof_110.png
-endif
-
-
-exit 1
-
+#
+#if ( $ms == 0 ) then
+#  echo $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V3 $gmi MS $clat $clon $outdir $gprof $model
+#  #echo $codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi MS $clat $clon $outdir $gprof $model
+#  #$codedir/EPC_ret_GMI_V5_read_interp_model_cold_V2 $gmi MS $clat $clon $outdir $gprof $model
+#
+##  python $codedir/compare_TB.py $msfile $msfile.tb_diff.png
+##  python $codedir/compare_precip_GMI.py $msfile $cmb $dpr $msfile.precip.png
+##  python $codedir/plot_DPR_prof_GMI.py $msfile 110 $msfile.dpr_prof_110.png
+#endif
+#
+#
+#exit 1
+#
